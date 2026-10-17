@@ -27,11 +27,20 @@ if (isset($_GET['set_status'])) {
     exit();
 }
 
-// 3 Hapus Tugas (DELETE)
+// 3. HAPUS TUGAS (Hanya kalau statusnya Selesai)
 if (isset($_GET['hapus_id'])) {
     $id = $_GET['hapus_id'];
-    $query = "DELETE FROM tugas WHERE id=$id";
-    mysqli_query($koneksi, $query);
+    
+    // Cek status tugas di database sebelum dihapus
+    $cek = mysqli_query($koneksi, "SELECT status FROM tugas WHERE id=$id");
+    $data = mysqli_fetch_assoc($cek);
+    
+    // Hanya eksekusi hapus jika statusnya 'Selesai'
+    if ($data && $data['status'] == 'Selesai') {
+        $query = "DELETE FROM tugas WHERE id=$id";
+        mysqli_query($koneksi, $query);
+    }
+    
     header("Location: index.php");
     exit();
 }
@@ -54,6 +63,8 @@ if (isset($_POST['edit_tugas'])) {
 // 5. Ambil Seluruh Data (READ)
 $result = mysqli_query($koneksi, "SELECT * FROM tugas ORDER BY id DESC");
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="id">
@@ -117,10 +128,14 @@ $result = mysqli_query($koneksi, "SELECT * FROM tugas ORDER BY id DESC");
                                             ✎ Edit
                                         </button>
 
-                                        <!-- Tombol untuk menghapus tugas sesuai barisnya -->
-                                        <a href="index.php?hapus_id=<?= $row['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Hapus tugas ini?')">
-                                            ✕ Hapus
-                                        </a>
+                                        <!-- Tombol Hapus: Ditambahkan atribut 'disabled' jika status belum 'Selesai' -->
+                                        <?php if ($row['status'] == 'Selesai') : ?>
+                                            <a href="index.php?hapus_id=<?= $row['id']; ?>" 
+                                            class="btn btn-sm btn-danger" 
+                                            onclick="return confirm('Hapus tugas ini?')">✕ Hapus</a>
+                                        <?php else : ?>
+                                            <button class="btn btn-sm btn-secondary" disabled title="Selesaikan tugas terlebih dahulu untuk menghapus">✕ Hapus</button>
+                                        <?php endif; ?>
                                     </td>
 
                                     <!-- Bagian untuk edit nama tugas -->
