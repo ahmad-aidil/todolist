@@ -48,14 +48,18 @@ if (isset($_GET['hapus_id'])) {
 // 4 Ubah Nama Tugas (EDIT)
 if (isset($_POST['edit_tugas'])) {
     $id = $_POST['id'];
-    // trim() untuk hapus spasi di awal/akhir input
     $nama_baru = trim($_POST['nama_tugas_baru']);
     
-    // Cek apakah nama baru mengandung karakter nyata setelah di-trim
-    if (!empty($nama_baru)) {
+    // Cek status tugas di database terlebih dahulu
+    $cek = mysqli_query($koneksi, "SELECT status FROM tugas WHERE id=$id");
+    $data = mysqli_fetch_assoc($cek);
+    
+    // Hanya izinkan edit jika status masih 'Belum' dan nama baru tidak kosong
+    if ($data && $data['status'] == 'Belum' && !empty($nama_baru)) {
         $query = "UPDATE tugas SET nama_tugas='$nama_baru' WHERE id=$id";
         mysqli_query($koneksi, $query);
     }
+    
     header("Location: index.php");
     exit();
 }
@@ -123,10 +127,16 @@ $result = mysqli_query($koneksi, "SELECT * FROM tugas ORDER BY id DESC");
                                             onchange="location.href='index.php?id=<?= $row['id']; ?>&set_status=<?= $row['status'] == 'Belum' ? 'Selesai' : 'Belum'; ?>'" 
                                             <?= $row['status'] == 'Selesai' ? 'checked' : ''; ?>>
 
-                                        <!-- Tombol untuk memicu edit nama tugas -->
-                                        <button type="button" class="btn btn-sm btn-info text-white me-1" data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id']; ?>">
-                                            ✎ Edit
-                                        </button>
+                                        <!-- Tombol Edit: Hanya aktif jika status masih 'Belum' -->
+                                        <?php if ($row['status'] == 'Belum') : ?>
+                                            <button type="button" class="btn btn-sm btn-info text-white me-1" 
+                                                    data-bs-toggle="modal" data-bs-target="#modalEdit<?= $row['id']; ?>">
+                                                ✎ Edit
+                                            </button>
+                                        <?php else : ?>
+                                            <button class="btn btn-sm btn-secondary me-1" disabled 
+                                                    title="Selesaikan tugas tidak dapat diedit">✎ Edit</button>
+                                        <?php endif; ?>
 
                                         <!-- Tombol Hapus: Ditambahkan atribut 'disabled' jika status belum 'Selesai' -->
                                         <?php if ($row['status'] == 'Selesai') : ?>
